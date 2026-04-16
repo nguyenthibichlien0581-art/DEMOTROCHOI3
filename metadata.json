@@ -1,0 +1,8 @@
+{
+  "name": "DEMOTROCHOI3",
+  "description": "An educational game about energy forms and transformations where students answer True/False questions by tilting their head.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}
