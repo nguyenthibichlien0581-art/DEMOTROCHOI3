@@ -1,13 +1,22 @@
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
+export interface MediaOption {
+  text: string;
+  imageUrl?: string;
+  audioUrl?: string;
+}
+
 export interface Question {
   id: string;
   content: string;
-  isCorrect: boolean;
-  explanation: string;
-  difficulty: Difficulty;
   imageUrl?: string;
   audioUrl?: string;
+  videoUrl?: string;
+  optionA: MediaOption;
+  optionB: MediaOption;
+  correctOption: 'A' | 'B';
+  explanation: string;
+  difficulty: Difficulty;
 }
 
 export interface ScoreEntry {

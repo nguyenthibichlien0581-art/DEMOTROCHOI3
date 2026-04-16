@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Zap, GraduationCap, User, Users } from 'lucide-react';
+import { Zap, GraduationCap, User, Settings } from 'lucide-react';
 
 interface StartScreenProps {
   onStart: (name: string, className: string) => void;
+  onAdmin: () => void;
 }
 
-export default function StartScreen({ onStart }: StartScreenProps) {
+export default function StartScreen({ onStart, onAdmin }: StartScreenProps) {
   const [name, setName] = useState('');
   const [className, setClassName] = useState('');
 
@@ -63,9 +64,17 @@ export default function StartScreen({ onStart }: StartScreenProps) {
         <button
           type="submit"
           disabled={!name || !className}
-          className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-105 active:scale-95 text-xl"
+          className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white font-bold py-4 rounded-xl shadow-[0_6px_0_0_#c2410c] transform transition active:translate-y-1 active:shadow-none text-xl"
         >
           Bắt đầu ngay!
+        </button>
+
+        <button
+          type="button"
+          onClick={onAdmin}
+          className="w-full flex items-center justify-center gap-2 text-orange-600/70 hover:text-orange-700 font-bold py-2 transition-colors text-sm"
+        >
+          <Settings className="w-4 h-4" /> Quản trị hệ thống
         </button>
       </form>
     </motion.div>

@@ -28,28 +28,28 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<ScoreEntry[]>([]);
 
   useEffect(() => {
-    setQuestions(storage.getQuestions());
-    setLeaderboard(storage.getLeaderboard());
+    const loadData = async () => {
+      const qs = await storage.getQuestions();
+      const lb = await storage.getLeaderboard();
+      setQuestions(qs);
+      setLeaderboard(lb);
+    };
+    loadData();
   }, [screen]);
 
   const handleStart = (name: string, className: string) => {
-    setGameState(prev => ({ ...prev, studentName: name, studentClass: className, difficulty: 'Easy' }));
+    setGameState(prev => ({ ...prev, studentName: name, studentClass: className }));
     setScreen('Game');
   };
 
-  const handleSelectDifficulty = (difficulty: Difficulty) => {
-    setGameState(prev => ({ ...prev, difficulty }));
-    setScreen('Game');
-  };
-
-  const handleFinishGame = (score: number, answers: { questionId: string; isCorrect: boolean }[]) => {
+  const handleFinishGame = async (score: number, answers: { questionId: string; isCorrect: boolean }[]) => {
     const entry: ScoreEntry = {
       name: gameState.studentName,
       className: gameState.studentClass,
       score,
       date: new Date().toISOString()
     };
-    storage.saveScore(entry);
+    await storage.saveScore(entry);
     setGameState(prev => ({ ...prev, score, answers, isGameOver: true }));
     setScreen('Result');
   };
@@ -69,16 +69,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-orange-300 to-blue-400 flex flex-col items-center justify-center p-4 font-sans">
-      {/* Admin Button */}
-      {screen === 'Start' && (
-        <button 
-          onClick={() => setScreen('Admin')}
-          className="fixed top-4 right-4 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white transition-all backdrop-blur-sm"
-        >
-          <Settings className="w-6 h-6" />
-        </button>
-      )}
-
       <AnimatePresence mode="wait">
         <motion.div
           key={screen}
@@ -87,19 +77,17 @@ export default function App() {
           exit={{ opacity: 0, y: -20 }}
           className="w-full flex justify-center"
         >
-          {screen === 'Start' && <StartScreen onStart={handleStart} />}
-          {screen === 'Mode' && <ModeSelection onSelect={handleSelectDifficulty} />}
+          {screen === 'Start' && <StartScreen onStart={handleStart} onAdmin={() => setScreen('Admin')} />}
           {screen === 'Game' && (
             <GameScreen 
               questions={questions} 
-              difficulty={gameState.difficulty} 
               onFinish={handleFinishGame} 
             />
           )}
           {screen === 'Result' && (
             <ResultScreen 
               score={gameState.score} 
-              total={questions.filter(q => q.difficulty === gameState.difficulty).length * 10}
+              total={questions.length * 10}
               onRestart={handleRestart}
               onShowLeaderboard={() => setScreen('Leaderboard')}
             />

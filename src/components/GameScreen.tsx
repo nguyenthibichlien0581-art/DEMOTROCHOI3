@@ -9,14 +9,13 @@ import confetti from 'canvas-confetti';
 
 interface GameScreenProps {
   questions: Question[];
-  difficulty: Difficulty;
   onFinish: (score: number, answers: { questionId: string; isCorrect: boolean }[]) => void;
 }
 
 const QUESTION_TIME = 20; // 20 seconds per question
 
-export default function GameScreen({ questions, difficulty, onFinish }: GameScreenProps) {
-  const filteredQuestions = questions.filter(q => q.difficulty === difficulty);
+export default function GameScreen({ questions, onFinish }: GameScreenProps) {
+  const filteredQuestions = questions;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
@@ -53,8 +52,8 @@ export default function GameScreen({ questions, difficulty, onFinish }: GameScre
 
   useEffect(() => {
     if (confirmedPosition && !showResult) {
-      const userChoice = confirmedPosition === 'Left'; // Left = True, Right = False
-      const correct = userChoice === currentQuestion.isCorrect;
+      const userChoice = confirmedPosition === 'Left' ? 'A' : 'B'; 
+      const correct = userChoice === currentQuestion.correctOption;
       
       setIsCorrect(correct);
       if (correct) {
@@ -92,9 +91,9 @@ export default function GameScreen({ questions, difficulty, onFinish }: GameScre
     }
   };
 
-  const playAudio = () => {
-    if (currentQuestion.audioUrl) {
-      const audio = new Audio(currentQuestion.audioUrl);
+  const playAudio = (url?: string) => {
+    if (url) {
+      const audio = new Audio(url);
       audio.play();
     }
   };
@@ -122,53 +121,89 @@ export default function GameScreen({ questions, difficulty, onFinish }: GameScre
             key={currentIndex}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[2rem] p-10 shadow-2xl min-h-[350px] flex flex-col items-center justify-center border-b-[12px] border-orange-100 relative overflow-hidden group"
+            className="bg-white rounded-[2rem] p-6 shadow-2xl min-h-[400px] flex flex-col items-center justify-center border-b-[12px] border-orange-100 relative overflow-hidden group"
           >
-            {currentQuestion.imageUrl && (
-              <div className="w-full h-48 mb-6 rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center border-2 border-gray-100">
-                <img 
-                  src={currentQuestion.imageUrl} 
-                  alt="Question" 
-                  className="max-w-full max-h-full object-contain transition-transform group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            )}
+            {/* Question Media */}
+            <div className="w-full flex flex-col items-center gap-4 mb-6">
+              {currentQuestion.videoUrl ? (
+                <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black border-2 border-gray-100 shadow-inner">
+                  <video 
+                    src={currentQuestion.videoUrl} 
+                    controls 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : currentQuestion.imageUrl ? (
+                <div className="w-full h-48 rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center border-2 border-gray-100">
+                  <img 
+                    src={currentQuestion.imageUrl} 
+                    alt="Question" 
+                    className="max-w-full max-h-full object-contain transition-transform group-hover:scale-105"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : null}
+
+              {currentQuestion.audioUrl && (
+                <button 
+                  onClick={() => playAudio(currentQuestion.audioUrl)}
+                  className="p-3 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-all active:scale-90"
+                >
+                  <Volume2 className="w-6 h-6" />
+                </button>
+              )}
+            </div>
             
-            <h2 className="text-3xl md:text-4xl font-black text-gray-800 leading-tight text-center">
+            <h2 className={clsx(
+              "font-black text-gray-800 leading-tight text-center",
+              currentQuestion.content.length > 100 ? "text-xl" : "text-2xl md:text-3xl"
+            )}>
               {currentQuestion.content}
             </h2>
-
-            {currentQuestion.audioUrl && (
-              <button 
-                onClick={playAudio}
-                className="mt-6 p-4 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-200 active:scale-90"
-              >
-                <Volume2 className="w-8 h-8" />
-              </button>
-            )}
           </motion.div>
 
           {/* Controls / Options */}
           <div className="grid grid-cols-2 gap-6">
+            {/* Option A */}
             <div className={clsx(
-              "p-8 rounded-3xl border-4 transition-all flex flex-col items-center justify-center gap-3 shadow-lg",
+              "p-6 rounded-3xl border-4 transition-all flex flex-col items-center justify-center gap-3 shadow-lg relative h-full",
               position === 'Left' ? "border-green-500 bg-green-50 scale-105 shadow-green-100" : "border-gray-100 bg-white",
-              showResult && currentQuestion.isCorrect && "ring-4 ring-green-500 ring-offset-4"
+              showResult && currentQuestion.correctOption === 'A' && "ring-4 ring-green-500 ring-offset-4"
             )}>
-              <div className="text-5xl font-black text-green-600">A</div>
-              <div className="text-2xl font-black text-gray-800">ĐÚNG</div>
-              <div className="text-sm font-bold text-gray-400 mt-2 uppercase tracking-wider">Nghiêng TRÁI</div>
+              <div className="absolute top-2 left-4 text-3xl font-black text-green-600/20">A</div>
+              {currentQuestion.optionA.imageUrl && (
+                <img src={currentQuestion.optionA.imageUrl} className="w-20 h-20 object-cover rounded-lg shadow-sm" alt="A"/>
+              )}
+              <div className="text-xl font-black text-gray-800 text-center leading-tight">
+                {currentQuestion.optionA.text}
+              </div>
+              {currentQuestion.optionA.audioUrl && (
+                <button onClick={() => playAudio(currentQuestion.optionA.audioUrl)} className="p-2 bg-green-100 text-green-600 rounded-full">
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              )}
+              <div className="text-[10px] font-bold text-gray-400 mt-auto uppercase tracking-wider">Nghiêng TRÁI</div>
             </div>
 
+            {/* Option B */}
             <div className={clsx(
-              "p-8 rounded-3xl border-4 transition-all flex flex-col items-center justify-center gap-3 shadow-lg",
+              "p-6 rounded-3xl border-4 transition-all flex flex-col items-center justify-center gap-3 shadow-lg relative h-full",
               position === 'Right' ? "border-red-500 bg-red-50 scale-105 shadow-red-100" : "border-gray-100 bg-white",
-              showResult && !currentQuestion.isCorrect && "ring-4 ring-red-500 ring-offset-4"
+              showResult && currentQuestion.correctOption === 'B' && "ring-4 ring-red-500 ring-offset-4"
             )}>
-              <div className="text-5xl font-black text-red-600">B</div>
-              <div className="text-2xl font-black text-gray-800">SAI</div>
-              <div className="text-sm font-bold text-gray-400 mt-2 uppercase tracking-wider">Nghiêng PHẢI</div>
+              <div className="absolute top-2 right-4 text-3xl font-black text-red-600/20">B</div>
+              {currentQuestion.optionB.imageUrl && (
+                <img src={currentQuestion.optionB.imageUrl} className="w-20 h-20 object-cover rounded-lg shadow-sm" alt="B"/>
+              )}
+              <div className="text-xl font-black text-gray-800 text-center leading-tight">
+                {currentQuestion.optionB.text}
+              </div>
+              {currentQuestion.optionB.audioUrl && (
+                <button onClick={() => playAudio(currentQuestion.optionB.audioUrl)} className="p-2 bg-red-100 text-red-600 rounded-full">
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              )}
+              <div className="text-[10px] font-bold text-gray-400 mt-auto uppercase tracking-wider">Nghiêng PHẢI</div>
             </div>
           </div>
         </div>

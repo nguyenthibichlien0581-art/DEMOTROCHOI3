@@ -12,11 +12,15 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico'],
         manifest: {
           name: 'Energy Quest: Head Tilt Challenge',
           short_name: 'EnergyQuest',
-          description: 'Educational game about energy transformations',
+          description: 'Trò chơi giáo dục thử thách nghiêng đầu về các dạng năng lượng',
           theme_color: '#f97316',
+          background_color: '#ffffff',
+          display: 'standalone',
+          start_url: '/',
           icons: [
             {
               src: 'https://picsum.photos/seed/energy/192/192',
@@ -26,7 +30,8 @@ export default defineConfig(({mode}) => {
             {
               src: 'https://picsum.photos/seed/energy/512/512',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any maskable'
             }
           ]
         }
