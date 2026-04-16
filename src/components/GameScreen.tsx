@@ -178,7 +178,7 @@ export default function GameScreen({ questions, difficulty, onFinish }: GameScre
           <div className="relative aspect-square lg:aspect-auto lg:h-[500px] bg-black rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white group">
             <video
               ref={videoRef}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-x-[-1]"
               autoPlay
               playsInline
               muted

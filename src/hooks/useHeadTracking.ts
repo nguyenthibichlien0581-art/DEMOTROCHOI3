@@ -47,21 +47,22 @@ export function useHeadTracking(active: boolean) {
          * - Nếu góc dương > ngưỡng: Đầu đang nghiêng sang PHẢI.
          * - Nếu góc âm < ngưỡng: Đầu đang nghiêng sang TRÁI.
          */
-        const leftEye = landmarks[33];
-        const rightEye = landmarks[263];
+        const leftEye = landmarks[33]; // Student's Left eye (appears on right side of image)
+        const rightEye = landmarks[263]; // Student's Right eye (appears on left side of image)
         
-        const dx = rightEye.x - leftEye.x;
-        const dy = rightEye.y - leftEye.y;
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        // Height difference between eyes
+        // If student tilts to THEIR LEFT: left eye goes down (higher y), right eye goes up (lower y)
+        // dy = LeftEye.y - RightEye.y will be POSITIVE
+        const dy = leftEye.y - rightEye.y;
         
-        // Ngưỡng nghiêng đầu (độ) - Có thể điều chỉnh để nhạy hơn hoặc ít nhạy hơn
-        const TILT_THRESHOLD = 15;
+        // Ngưỡng nghiêng đầu (thay đổi giá trị này để điều chỉnh độ nhạy)
+        const TILT_THRESHOLD = 0.05; 
         
         let currentPos: HeadPosition = 'Center';
-        if (angle > TILT_THRESHOLD) {
-          currentPos = 'Right'; // Nghiêng phải
-        } else if (angle < -TILT_THRESHOLD) {
-          currentPos = 'Left'; // Nghiêng trái
+        if (dy > TILT_THRESHOLD) {
+          currentPos = 'Left'; // Nghiêng sang TRÁI của học sinh
+        } else if (dy < -TILT_THRESHOLD) {
+          currentPos = 'Right'; // Nghiêng sang PHẢI của học sinh
         }
         
         setPosition(currentPos);
