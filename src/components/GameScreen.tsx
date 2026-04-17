@@ -52,8 +52,8 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
 
   useEffect(() => {
     if (confirmedPosition && !showResult) {
-      // Map tilt direction to choices: Left -> A, Right -> B
-      const userChoice = confirmedPosition === 'Left' ? 'A' : 'B'; 
+      // Map tilt direction to choices: Right -> A, Left -> B
+      const userChoice = confirmedPosition === 'Right' ? 'A' : 'B'; 
       const correct = userChoice === currentQuestion.correctOption;
       
       setIsCorrect(correct);
@@ -183,7 +183,7 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
                   <Volume2 className="w-4 h-4" />
                 </button>
               )}
-              <div className="text-[10px] font-bold text-gray-400 mt-auto uppercase tracking-wider">Nghiêng TRÁI</div>
+              <div className="text-[10px] font-bold text-gray-400 mt-auto uppercase tracking-wider">Nghiêng PHẢI</div>
             </div>
 
             {/* Option B */}
@@ -204,7 +204,7 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
                   <Volume2 className="w-4 h-4" />
                 </button>
               )}
-              <div className="text-[10px] font-bold text-gray-400 mt-auto uppercase tracking-wider">Nghiêng PHẢI</div>
+              <div className="text-[10px] font-bold text-gray-400 mt-auto uppercase tracking-wider">Nghiêng TRÁI</div>
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
                   LIVE CAMERA
                 </div>
                 <div className="bg-white/90 backdrop-blur-md text-gray-900 text-xs font-black px-3 py-1.5 rounded-full shadow-lg">
-                  {position === 'Center' ? 'GIỮ THẲNG ĐẦU' : position === 'Left' ? 'ĐANG CHỌN ĐÁP ÁN A' : 'ĐANG CHỌN ĐÁP ÁN B'}
+                  {position === 'Center' ? 'GIỮ THẲNG ĐẦU' : position === 'Right' ? 'ĐANG CHỌN ĐÁP ÁN A' : 'ĐANG CHỌN ĐÁP ÁN B'}
                 </div>
               </div>
 
