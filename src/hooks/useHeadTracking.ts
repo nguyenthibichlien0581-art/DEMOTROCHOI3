@@ -4,8 +4,15 @@ import { Camera } from '@mediapipe/camera_utils';
 
 export type HeadPosition = 'Center' | 'Left' | 'Right';
 
+export interface Landmark {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export function useHeadTracking(active: boolean) {
   const [position, setPosition] = useState<HeadPosition>('Center');
+  const [landmarks, setLandmarks] = useState<Landmark[] | null>(null);
   const [confidence, setConfidence] = useState(0); // 0 to 1
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const faceMeshRef = useRef<FaceMesh | null>(null);
@@ -38,7 +45,8 @@ export function useHeadTracking(active: boolean) {
 
     faceMesh.onResults((results: Results) => {
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-        const landmarks = results.multiFaceLandmarks[0];
+        const currentLandmarks = results.multiFaceLandmarks[0];
+        setLandmarks(currentLandmarks);
         
         /**
          * LOGIC NHẬN DIỆN NGHIÊNG ĐẦU:
@@ -47,8 +55,8 @@ export function useHeadTracking(active: boolean) {
          * - Nếu góc dương > ngưỡng: Đầu đang nghiêng sang PHẢI.
          * - Nếu góc âm < ngưỡng: Đầu đang nghiêng sang TRÁI.
          */
-        const leftEye = landmarks[33]; // Student's Left eye (appears on right side of image)
-        const rightEye = landmarks[263]; // Student's Right eye (appears on left side of image)
+        const leftEye = currentLandmarks[33]; // Student's Left eye (appears on right side of image)
+        const rightEye = currentLandmarks[263]; // Student's Right eye (appears on left side of image)
         
         // Height difference between eyes
         // If student tilts to THEIR LEFT: left eye goes down (higher y), right eye goes up (lower y)
@@ -60,14 +68,15 @@ export function useHeadTracking(active: boolean) {
         
         let currentPos: HeadPosition = 'Center';
         if (dy > TILT_THRESHOLD) {
-          currentPos = 'Left'; // Nghiêng sang TRÁI của học sinh
+          currentPos = 'Right'; // Visually tilts toward the RIGHT side of the camera feed (Choice A)
         } else if (dy < -TILT_THRESHOLD) {
-          currentPos = 'Right'; // Nghiêng sang PHẢI của học sinh
+          currentPos = 'Left'; // Visually tilts toward the LEFT side of the camera feed (Choice B)
         }
         
         setPosition(currentPos);
       } else {
         setPosition('Center');
+        setLandmarks(null);
       }
     });
 
@@ -133,6 +142,7 @@ export function useHeadTracking(active: boolean) {
 
   return {
     position,
+    landmarks,
     confidence,
     confirmedPosition,
     videoRef,

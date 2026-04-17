@@ -81,6 +81,8 @@ export default function App() {
           {screen === 'Game' && (
             <GameScreen 
               questions={questions} 
+              studentName={gameState.studentName}
+              studentClass={gameState.studentClass}
               onFinish={handleFinishGame} 
             />
           )}
