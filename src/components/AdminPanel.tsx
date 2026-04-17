@@ -15,7 +15,10 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const [password, setPassword] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Question>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,8 +34,9 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     e.preventDefault();
     if (password === 'Lien123') {
       setIsLoggedIn(true);
+      setError(null);
     } else {
-      alert('Sai mật khẩu!');
+      setError('Sai mật khẩu!');
     }
   };
 
@@ -41,7 +45,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     if (!file) return;
 
     if (file.size > 20 * 1024 * 1024) {
-      alert('File quá lớn! Vui lòng chọn file dưới 20MB.');
+      setError('File quá lớn! Vui lòng chọn file dưới 20MB.');
       return;
     }
 
@@ -141,11 +145,15 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
         difficulty: 'Easy'
       }));
 
-      if (confirm(`Bạn có muốn nhập ${imported.length} câu hỏi từ Excel?`)) {
-        const updated = [...questions, ...imported];
-        setQuestions(updated);
-        storage.saveQuestions(updated).then();
-      }
+      setConfirmAction({
+        message: `Bạn có muốn nhập ${imported.length} câu hỏi từ Excel?`,
+        onConfirm: () => {
+          const updated = [...questions, ...imported];
+          setQuestions(updated);
+          storage.saveQuestions(updated).then();
+          setConfirmAction(null);
+        }
+      });
     };
     reader.readAsBinaryString(file);
     e.target.value = ''; // Reset input
@@ -169,12 +177,16 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     reader.onload = (evt) => {
       try {
         const imported = JSON.parse(evt.target?.result as string) as Question[];
-        if (confirm(`Bạn có muốn khôi phục ${imported.length} câu hỏi từ bản sao lưu JSON (bao gồm cả media)?`)) {
-          setQuestions(imported);
-          storage.saveQuestions(imported).then();
-        }
+        setConfirmAction({
+          message: `Bạn có muốn khôi phục ${imported.length} câu hỏi từ bản sao lưu JSON (bao gồm cả media)?`,
+          onConfirm: () => {
+            setQuestions(imported);
+            storage.saveQuestions(imported).then();
+            setConfirmAction(null);
+          }
+        });
       } catch (err) {
-        alert('File JSON không hợp lệ!');
+        setError('File JSON không hợp lệ!');
       }
     };
     reader.readAsText(file);
@@ -208,18 +220,20 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa câu hỏi này?')) {
-      const updated = questions.filter(q => q.id !== id);
-      setQuestions(updated);
-      await storage.saveQuestions(updated);
-    }
+    const updated = questions.filter(q => q.id !== id);
+    setQuestions(updated);
+    await storage.saveQuestions(updated);
+    setDeletingId(null);
   };
 
   const handleResetLeaderboard = async () => {
-    if (confirm('Bạn có chắc muốn xóa toàn bộ bảng vinh danh?')) {
-      await storage.clearLeaderboard();
-      alert('Đã reset bảng vinh danh!');
-    }
+    setConfirmAction({
+      message: 'Bạn có chắc muốn xóa toàn bộ bảng vinh danh?',
+      onConfirm: async () => {
+        await storage.clearLeaderboard();
+        setConfirmAction(null);
+      }
+    });
   };
 
   if (!isLoggedIn) {
@@ -240,9 +254,13 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-gray-800 focus:outline-none"
+            className={clsx(
+              "w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-all",
+              error ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-gray-800"
+            )}
             placeholder="Nhập mật khẩu..."
           />
+          {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
           <button type="submit" className="w-full bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-900 transition-colors">
             Đăng nhập
           </button>
@@ -491,13 +509,31 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
                       >
                         <Edit2 className="w-6 h-6" />
                       </button>
-                      <button 
-                         onClick={() => handleDelete(q.id)} 
-                         className="p-4 bg-red-50 text-red-500 rounded-3xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95 border-2 border-red-100 hover:border-red-600"
-                         title="Xóa câu hỏi"
-                      >
-                        <Trash2 className="w-6 h-6" />
-                      </button>
+                      
+                      {deletingId === q.id ? (
+                        <div className="flex items-center gap-1 bg-red-50 p-1 rounded-3xl border-2 border-red-100">
+                          <button 
+                            onClick={() => handleDelete(q.id)}
+                            className="px-4 py-3 bg-red-500 text-white rounded-2xl text-[10px] font-black hover:bg-red-600 active:scale-90 transition-all uppercase"
+                          >
+                            Xóa
+                          </button>
+                          <button 
+                            onClick={() => setDeletingId(null)}
+                            className="px-4 py-3 bg-white text-gray-400 rounded-2xl text-[10px] font-black hover:text-gray-600 active:scale-90 transition-all uppercase"
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                           onClick={() => setDeletingId(q.id)} 
+                           className="p-4 bg-red-50 text-red-500 rounded-3xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95 border-2 border-red-100 hover:border-red-600"
+                           title="Xóa câu hỏi"
+                        >
+                          <Trash2 className="w-6 h-6" />
+                        </button>
+                      )}
                    </div>
                 </div>
               )}
@@ -516,6 +552,32 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
           )}
         </div>
       </div>
+
+      {confirmAction && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border-4 border-gray-900"
+          >
+            <h4 className="text-xl font-black text-gray-800 mb-4 text-center">{confirmAction.message}</h4>
+            <div className="flex gap-4">
+              <button 
+                onClick={confirmAction.onConfirm}
+                className="flex-grow bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition-all uppercase tracking-widest shadow-[0_4px_0_0_#1d4ed8]"
+              >
+                Xác nhận
+              </button>
+              <button 
+                onClick={() => setConfirmAction(null)}
+                className="flex-grow bg-gray-100 text-gray-400 py-4 rounded-2xl font-black hover:bg-gray-200 transition-all uppercase tracking-widest"
+              >
+                Hủy
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

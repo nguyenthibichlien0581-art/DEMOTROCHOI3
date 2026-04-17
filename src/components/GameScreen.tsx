@@ -32,6 +32,50 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
   const { position, landmarks, confidence, confirmedPosition, videoRef, resetConfirmation } = useHeadTracking(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Draw face landmarks
+  useEffect(() => {
+    if (!canvasRef.current || !landmarks) {
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Set line style
+    ctx.strokeStyle = position === 'Center' ? 'rgba(255, 255, 255, 0.5)' : (position === 'Left' ? 'rgba(236, 72, 153, 0.7)' : 'rgba(14, 165, 233, 0.7)');
+    ctx.lineWidth = 1;
+
+    // Draw a selection indicator line connecting eyes
+    const leftEye = landmarks[33];
+    const rightEye = landmarks[263];
+    
+    // Draw dots for main points
+    [33, 263, 1, 61, 291, 199].forEach(idx => {
+       const p = landmarks[idx];
+       if (p) {
+         ctx.beginPath();
+         ctx.arc(p.x * canvas.width, p.y * canvas.height, 1.5, 0, Math.PI * 2);
+         ctx.fillStyle = ctx.strokeStyle;
+         ctx.fill();
+       }
+    });
+
+    // Draw a subtle connecting line
+    ctx.beginPath();
+    ctx.moveTo(leftEye.x * canvas.width, leftEye.y * canvas.height);
+    ctx.lineTo(rightEye.x * canvas.width, rightEye.y * canvas.height);
+    ctx.stroke();
+
+  }, [landmarks, position]);
 
   // Background Music Setup
   useEffect(() => {
@@ -217,6 +261,12 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
             playsInline
             muted
           />
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={480}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           
           {/* Camera Overlay */}
           <div className="absolute inset-x-2 top-4 flex justify-between items-center px-2 z-20">
@@ -234,13 +284,27 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
 
           {/* Minimal visual cues for tilt */}
           <div className={clsx(
-            "absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-pink-500/20 to-transparent transition-opacity duration-300",
+            "absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-pink-500/20 to-transparent transition-opacity duration-300 z-10",
             position === 'Left' ? "opacity-100" : "opacity-0"
           )} />
           <div className={clsx(
-            "absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-sky-500/20 to-transparent transition-opacity duration-300",
+            "absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-sky-500/20 to-transparent transition-opacity duration-300 z-10",
             position === 'Right' ? "opacity-100" : "opacity-0"
           )} />
+
+          {/* Selection Progress Bar */}
+          {confidence > 0 && position !== 'Center' && (
+            <div className="absolute inset-x-4 bottom-4 h-2 bg-black/40 rounded-full overflow-hidden z-20">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${confidence * 100}%` }}
+                className={clsx(
+                  "h-full rounded-full transition-colors",
+                  position === 'Left' ? 'bg-pink-500 shadow-[0_0_10px_#ec4899]' : 'bg-sky-500 shadow-[0_0_10px_#0ea5e9]'
+                )}
+              />
+            </div>
+          )}
 
           {/* Grid Overlay for Visual Aid */}
           <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
@@ -263,7 +327,7 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
             <div className="flex flex-col items-center gap-4 w-full px-4">
               <span className={clsx(
                 "font-black text-gray-900 tracking-tight text-center leading-tight transition-all",
-                currentQuestion.optionA.content?.length > 20 ? "text-3xl md:text-4xl" : "text-4xl md:text-6xl"
+                currentQuestion.optionA.text?.length > 20 ? "text-3xl md:text-4xl" : "text-4xl md:text-6xl"
               )}>
                 {currentQuestion.optionA.imageUrl ? (
                   <img src={currentQuestion.optionA.imageUrl} className="w-32 h-32 object-contain" alt="A" />
@@ -286,7 +350,7 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
             <div className="flex flex-col items-center gap-4 w-full px-4">
               <span className={clsx(
                 "font-black text-gray-900 tracking-tight text-center leading-tight transition-all",
-                currentQuestion.optionB.content?.length > 20 ? "text-3xl md:text-4xl" : "text-4xl md:text-6xl"
+                currentQuestion.optionB.text?.length > 20 ? "text-3xl md:text-4xl" : "text-4xl md:text-6xl"
               )}>
                 {currentQuestion.optionB.imageUrl ? (
                   <img src={currentQuestion.optionB.imageUrl} className="w-32 h-32 object-contain" alt="B" />

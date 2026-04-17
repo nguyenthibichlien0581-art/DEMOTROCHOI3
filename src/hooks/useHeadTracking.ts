@@ -46,7 +46,7 @@ export function useHeadTracking(active: boolean) {
     faceMesh.onResults((results: Results) => {
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const currentLandmarks = results.multiFaceLandmarks[0];
-        setLandmarks(currentLandmarks);
+        setLandmarks([...currentLandmarks]); // Ensure new array reference
         
         /**
          * LOGIC NHẬN DIỆN NGHIÊNG ĐẦU:
@@ -67,10 +67,10 @@ export function useHeadTracking(active: boolean) {
         const TILT_THRESHOLD = 0.05; 
         
         let currentPos: HeadPosition = 'Center';
-        if (dy > TILT_THRESHOLD) {
-          currentPos = 'Right'; // Visually tilts toward the RIGHT side of the camera feed (Choice A)
-        } else if (dy < -TILT_THRESHOLD) {
-          currentPos = 'Left'; // Visually tilts toward the LEFT side of the camera feed (Choice B)
+        if (dy < -TILT_THRESHOLD) {
+          currentPos = 'Left'; // Physically tilting LEFT (Choice A)
+        } else if (dy > TILT_THRESHOLD) {
+          currentPos = 'Right'; // Physically tilting RIGHT (Choice B)
         }
         
         setPosition(currentPos);
@@ -82,18 +82,39 @@ export function useHeadTracking(active: boolean) {
 
     faceMeshRef.current = faceMesh;
 
-    if (videoRef.current) {
-      const camera = new Camera(videoRef.current, {
-        onFrame: async () => {
-          if (videoRef.current) {
-            await faceMesh.send({ image: videoRef.current });
-          }
-        },
-        width: 640,
-        height: 480,
-      });
-      camera.start();
-      cameraRef.current = camera;
+    let cameraStarted = false;
+    const startCamera = () => {
+      if (videoRef.current && !cameraStarted) {
+        cameraStarted = true;
+        const camera = new Camera(videoRef.current, {
+          onFrame: async () => {
+            if (videoRef.current) {
+              await faceMesh.send({ image: videoRef.current });
+            }
+          },
+          width: 640,
+          height: 480,
+        });
+        camera.start();
+        cameraRef.current = camera;
+        return true;
+      }
+      return false;
+    };
+
+    // Try immediately
+    if (!startCamera()) {
+      // If not ready, poll until ready (React mount timing)
+      const checkInterval = setInterval(() => {
+        if (startCamera()) {
+          clearInterval(checkInterval);
+        }
+      }, 500);
+      return () => {
+        clearInterval(checkInterval);
+        if (cameraRef.current) cameraRef.current.stop();
+        if (faceMeshRef.current) faceMeshRef.current.close();
+      };
     }
 
     return () => {
