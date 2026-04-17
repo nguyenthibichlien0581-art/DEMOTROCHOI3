@@ -52,6 +52,7 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
 
   useEffect(() => {
     if (confirmedPosition && !showResult) {
+      // Map tilt direction to choices: Left -> A, Right -> B
       const userChoice = confirmedPosition === 'Left' ? 'A' : 'B'; 
       const correct = userChoice === currentQuestion.correctOption;
       
@@ -228,7 +229,7 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
                   LIVE CAMERA
                 </div>
                 <div className="bg-white/90 backdrop-blur-md text-gray-900 text-xs font-black px-3 py-1.5 rounded-full shadow-lg">
-                  {position === 'Center' ? 'GIỮ THẲNG ĐẦU' : position === 'Left' ? 'ĐANG CHỌN ĐÚNG' : 'ĐANG CHỌN SAI'}
+                  {position === 'Center' ? 'GIỮ THẲNG ĐẦU' : position === 'Left' ? 'ĐANG CHỌN ĐÁP ÁN A' : 'ĐANG CHỌN ĐÁP ÁN B'}
                 </div>
               </div>
 
@@ -239,11 +240,11 @@ export default function GameScreen({ questions, onFinish }: GameScreenProps) {
 
               {/* Tilt Indicators */}
               <div className={clsx(
-                "absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-green-500/40 to-transparent transition-opacity duration-300",
+                "absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-green-500/40 to-transparent transition-opacity duration-300",
                 position === 'Left' ? "opacity-100" : "opacity-0"
               )} />
               <div className={clsx(
-                "absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-red-500/40 to-transparent transition-opacity duration-300",
+                "absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-red-500/40 to-transparent transition-opacity duration-300",
                 position === 'Right' ? "opacity-100" : "opacity-0"
               )} />
             </div>

@@ -29,7 +29,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin123') {
+    if (password === 'Lien123') {
       setIsLoggedIn(true);
     } else {
       alert('Sai mật khẩu!');
