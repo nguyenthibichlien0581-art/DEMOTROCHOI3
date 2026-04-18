@@ -38,8 +38,28 @@ export default function App() {
     loadData();
   }, [screen]);
 
-  const handleStart = (name: string, className: string) => {
-    setGameState(prev => ({ ...prev, studentName: name, studentClass: className }));
+  const handleStart = async (name: string, className: string) => {
+    // Retrieve fresh questions from the question bank on start
+    const bank = await storage.getQuestions();
+    
+    if (bank.length === 0) {
+      alert("Ngân hàng câu hỏi hiện đang trống. Vui lòng liên hệ Quản trị viên để thêm câu hỏi!");
+      return;
+    }
+
+    // Shuffle and pick 10 questions (or all if less than 10)
+    const shuffled = [...bank].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 10);
+    
+    setQuestions(selected);
+    setGameState(prev => ({ 
+      ...prev, 
+      studentName: name, 
+      studentClass: className,
+      score: 0,
+      answers: [],
+      isGameOver: false
+    }));
     setScreen('Game');
   };
 

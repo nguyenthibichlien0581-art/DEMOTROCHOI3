@@ -296,7 +296,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
           </div>
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tighter">Hệ Thống Quản Trị</h2>
-            <p className="text-xs text-white/50 font-bold">NGÂN HÀNG CÂU HỎI ĐA PHƯƠNG TIỆN</p>
+            <p className="text-xs text-white/50 font-bold uppercase tracking-widest">Ngân hàng câu hỏi Trung Tâm</p>
           </div>
         </div>
         
