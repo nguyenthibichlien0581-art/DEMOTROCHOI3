@@ -87,7 +87,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Questions");
-    XLSX.writeFile(wb, "EnergyQuest_Questions.xlsx");
+    XLSX.writeFile(wb, "NghiengDauLuomKienThuc_Questions.xlsx");
   };
 
   const handleDownloadTemplate = () => {
@@ -109,7 +109,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "EnergyQuest_Template.xlsx");
+    XLSX.writeFile(wb, "NghiengDauLuomKienThuc_Template.xlsx");
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,7 +162,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const handleExportJSON = () => {
     const dataStr = JSON.stringify(questions, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = 'EnergyQuest_Backup_Full.json';
+    const exportFileDefaultName = 'NghiengDauLuomKienThuc_Backup.json';
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -224,6 +224,17 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     setQuestions(updated);
     await storage.saveQuestions(updated);
     setDeletingId(null);
+  };
+
+  const handleDeleteAllQuestions = async () => {
+    setConfirmAction({
+      message: 'Bạn có chắc chắn muốn xóa TẤT CẢ các câu hỏi hiện có? Hành động này không thể hoàn tác.',
+      onConfirm: async () => {
+        setQuestions([]);
+        await storage.saveQuestions([]);
+        setConfirmAction(null);
+      }
+    });
   };
 
   const handleResetLeaderboard = async () => {
@@ -315,6 +326,10 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
 
           <button onClick={handleResetLeaderboard} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/50 px-3 py-2 rounded-xl text-[10px] font-black transition-all shadow-lg active:translate-y-1">
             RESET BẢNG ĐIỂM
+          </button>
+          
+          <button onClick={handleDeleteAllQuestions} className="bg-red-600/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-600/50 px-3 py-2 rounded-xl text-[10px] font-black transition-all shadow-lg active:translate-y-1">
+            XÓA TẤT CẢ CÂU HỎI
           </button>
           
           <div className="w-[1px] h-10 bg-white/10 mx-2" />

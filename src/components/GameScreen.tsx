@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Question, Difficulty } from '../types';
+import { Question, Difficulty, ScoreEntry } from '../types';
 import { useHeadTracking } from '../hooks/useHeadTracking';
-import { CheckCircle2, XCircle, ArrowRight, Camera as CameraIcon, Info, Timer, Volume2, Trophy, VolumeX, Volume1, Play, Pause, Music } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, Camera as CameraIcon, Info, Timer, Volume2, Trophy, VolumeX, Volume1, Play, Pause, Music, Medal, Users } from 'lucide-react';
 import clsx from 'clsx';
 
 import confetti from 'canvas-confetti';
@@ -12,11 +12,13 @@ interface GameScreenProps {
   studentName: string;
   studentClass: string;
   onFinish: (score: number, answers: { questionId: string; isCorrect: boolean }[]) => void;
+  isAudioEnabled: boolean;
+  leaderboard: ScoreEntry[];
 }
 
 const QUESTION_TIME = 20; // 20 seconds per question
 
-export default function GameScreen({ questions, studentName, studentClass, onFinish }: GameScreenProps) {
+export default function GameScreen({ questions, studentName, studentClass, onFinish, isAudioEnabled, leaderboard }: GameScreenProps) {
   const filteredQuestions = questions;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -79,30 +81,28 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
 
   // Background Music Setup
   useEffect(() => {
+    if (!isAudioEnabled) return;
+
     const musicSrc = customMusicUrl || 'https://cdn.pixabay.com/download/audio/2024/02/14/audio_a796030514.mp3?filename=8-bit-arcade-189194.mp3';
     
     if (bgMusicRef.current) {
       bgMusicRef.current.pause();
     }
     
-    bgMusicRef.current = new Audio(musicSrc);
-    bgMusicRef.current.loop = true;
-    bgMusicRef.current.volume = isMusicMuted ? 0 : musicVolume;
-    
-    const playAttempt = setInterval(() => {
-      if (bgMusicRef.current) {
-        bgMusicRef.current.play()
-          .then(() => clearInterval(playAttempt))
-          .catch(() => {});
-      }
-    }, 1000);
+    const audio = new Audio(musicSrc);
+    audio.loop = true;
+    audio.volume = isMusicMuted ? 0 : musicVolume;
+    bgMusicRef.current = audio;
+
+    audio.play().catch(e => {
+        console.log('Background music start blocked:', e);
+    });
 
     return () => {
-      clearInterval(playAttempt);
       bgMusicRef.current?.pause();
       bgMusicRef.current = null;
     };
-  }, [customMusicUrl]);
+  }, [customMusicUrl, isAudioEnabled]);
 
   // Sync volume and speed
   useEffect(() => {
@@ -166,6 +166,7 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
   }, [confirmedPosition, currentQuestion, showResult]);
 
   const playFeedbackSound = (correct: boolean) => {
+    if (!isAudioEnabled) return;
     const audio = new Audio(
       correct 
         ? 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3' // Ting ting
@@ -361,81 +362,107 @@ export default function GameScreen({ questions, studentName, studentClass, onFin
           </div>
         </div>
 
-        {/* Row 2, Col 4: Scoreboard & Controls */}
-        <div className="col-span-1 bg-white rounded-2xl border-4 border-sky-100 p-5 flex flex-col shadow-sm gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-sky-500 font-black mb-4 pb-2 border-b-2 border-sky-50">
-              <Trophy className="w-5 h-5" />
-              <span className="uppercase tracking-wider">Bảng điểm</span>
+        {/* Row 2, Col 4: Leaderboard & Controls */}
+        <div className="col-span-1 bg-white rounded-2xl border-4 border-sky-100 p-4 flex flex-col shadow-sm gap-4 overflow-hidden">
+          {/* Top 3 Vinh Danh */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-orange-500 font-black mb-1">
+              <Trophy className="w-4 h-4" />
+              <span className="text-[10px] uppercase tracking-widest">Top 3 Vinh Danh</span>
             </div>
-            
-            <div className="bg-emerald-50 border-2 border-emerald-100 rounded-xl p-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center font-black text-xs">
-                  1
+            <div className="grid grid-cols-1 gap-1.5">
+              {leaderboard.slice(0, 3).map((entry, idx) => (
+                <div key={idx} className={clsx(
+                  "flex items-center justify-between p-2 rounded-xl border-2",
+                  idx === 0 ? "bg-yellow-50 border-yellow-200" :
+                  idx === 1 ? "bg-slate-50 border-slate-200" :
+                  "bg-orange-50 border-orange-200"
+                )}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={clsx(
+                      "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0",
+                      idx === 0 ? "bg-yellow-400 text-yellow-900" :
+                      idx === 1 ? "bg-slate-400 text-white" :
+                      "bg-orange-400 text-white"
+                    )}>
+                      {idx + 1}
+                    </div>
+                    <div className="truncate">
+                      <div className="text-[10px] font-black text-gray-800 truncate">{entry.name}</div>
+                      <div className="text-[8px] text-gray-500">Lớp {entry.className}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-black text-gray-700 ml-2 shrink-0">{entry.score}</div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-gray-700 uppercase">{studentName}</span>
-                  <span className="text-[10px] text-gray-400">Lớp {studentClass}</span>
-                </div>
-              </div>
-              <div className="text-2xl font-black text-emerald-600">{score}</div>
+              ))}
+              {leaderboard.length === 0 && (
+                <div className="text-[10px] text-gray-400 italic text-center py-2">Chưa có dữ liệu...</div>
+              )}
             </div>
           </div>
 
-          {/* Music Controls */}
-          <div className="mt-4 p-4 bg-sky-50/50 rounded-xl border-2 border-sky-100 flex flex-col gap-4">
+          {/* Current Player & List */}
+          <div className="flex-grow flex flex-col gap-2 min-h-0">
+            <div className="flex items-center gap-2 text-sky-500 font-black mb-1">
+              <Users className="w-4 h-4" />
+              <span className="text-[10px] uppercase tracking-widest">Danh sách người chơi</span>
+            </div>
+            
+            {/* Scrollable List */}
+            <div className="flex-grow overflow-y-auto pr-1 custom-scrollbar space-y-1.5 min-h-[100px]">
+              {/* Active Player (Sticky-like at top) */}
+              <div className="bg-emerald-50 border-2 border-emerald-400 rounded-xl p-2.5 flex items-center justify-between shadow-sm sticky top-0 z-10">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center font-black text-[10px] shrink-0 animate-pulse">
+                    ME
+                  </div>
+                  <div className="truncate">
+                    <div className="text-[10px] font-black text-emerald-900 truncate uppercase">{studentName}</div>
+                    <div className="text-[8px] text-emerald-600">Lớp {studentClass}</div>
+                  </div>
+                </div>
+                <div className="text-lg font-black text-emerald-600 ml-2 shrink-0">{score}</div>
+              </div>
+
+              {/* Other Players */}
+              {leaderboard.slice(3, 10).map((entry, idx) => (
+                <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 border border-gray-100 rounded-lg">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="text-[10px] font-bold text-gray-400 w-4">{idx + 4}</div>
+                    <div className="truncate">
+                      <div className="text-[9px] font-bold text-gray-600 truncate">{entry.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-[9px] font-bold text-gray-500">{entry.score}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Compact Music Controls */}
+          <div className="p-3 bg-sky-50 rounded-xl border border-sky-100 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Âm nhạc</span>
-              <div className="flex items-center gap-2">
-                <label className="p-1.5 bg-white rounded-lg shadow-sm text-sky-500 hover:bg-sky-100 transition-colors cursor-pointer" title="Chọn nhạc từ máy tính">
-                  <Music className="w-4 h-4" />
-                  <input 
-                    type="file" 
-                    accept="audio/*" 
-                    className="hidden" 
-                    onChange={handleMusicUpload}
-                  />
-                </label>
+              <span className="text-[8px] font-black text-sky-600 uppercase">Âm nhạc</span>
+              <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setIsMusicMuted(!isMusicMuted)}
-                  className="p-1.5 bg-white rounded-lg shadow-sm text-sky-500 hover:bg-sky-100 transition-colors"
+                  className="p-1 bg-white rounded shadow-sm text-sky-500 hover:bg-sky-100 transition-colors"
                 >
-                  {isMusicMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  {isMusicMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
                 </button>
+                <label className="p-1 bg-white rounded shadow-sm text-sky-500 hover:bg-sky-100 transition-colors cursor-pointer">
+                  <Music className="w-3 h-3" />
+                  <input type="file" accept="audio/*" className="hidden" onChange={handleMusicUpload} />
+                </label>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Volume1 className="w-3 h-3 text-sky-300" />
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.05" 
-                value={musicVolume}
-                onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-                className="flex-grow accent-sky-500 h-1 rounded-lg cursor-pointer"
-              />
-              <Volume2 className="w-3 h-3 text-sky-400" />
-            </div>
-
-            {customMusicUrl && (
-              <div className="text-[9px] text-sky-400 font-bold truncate italic">
-                Đang phát nhạc tùy chỉnh...
-              </div>
-            )}
-          </div>
-
-          <div className="mt-auto space-y-3">
-            <div className="flex items-center gap-3 opacity-30 grayscale">
-              <div className="w-8 h-8 bg-gray-200 rounded-full" />
-              <div className="h-2 w-24 bg-gray-100 rounded" />
-            </div>
-            <div className="flex items-center gap-3 opacity-20 grayscale">
-              <div className="w-8 h-8 bg-gray-200 rounded-full" />
-              <div className="h-2 w-16 bg-gray-100 rounded" />
-            </div>
+            <input 
+              type="range" 
+              min="0" max="1" step="0.05" 
+              value={musicVolume}
+              onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+              className="w-full accent-sky-500 h-1 rounded-lg cursor-pointer"
+            />
           </div>
         </div>
 

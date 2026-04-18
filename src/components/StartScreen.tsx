@@ -1,15 +1,29 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Zap, GraduationCap, User, Settings } from 'lucide-react';
+import { Zap, GraduationCap, User, Settings, Volume2, VolumeX } from 'lucide-react';
 
 interface StartScreenProps {
   onStart: (name: string, className: string) => void;
   onAdmin: () => void;
+  hasInteracted: boolean;
+  onEnableAudio: () => void;
 }
 
-export default function StartScreen({ onStart, onAdmin }: StartScreenProps) {
+export default function StartScreen({ onStart, onAdmin, hasInteracted, onEnableAudio }: StartScreenProps) {
   const [name, setName] = useState('');
   const [className, setClassName] = useState('');
+
+  const handleEnableAudio = () => {
+    // Unlocking audio context
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+    audio.volume = 0;
+    audio.play().then(() => {
+      onEnableAudio();
+    }).catch(e => {
+      console.log('Audio unlock failed:', e);
+      onEnableAudio(); // Still call it even if play fails, might need another browser gesture
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +42,39 @@ export default function StartScreen({ onStart, onAdmin }: StartScreenProps) {
         <div className="bg-orange-100 p-4 rounded-full mb-4">
           <Zap className="w-12 h-12 text-orange-500 fill-orange-500" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 text-center">Energy Quest</h1>
-        <p className="text-gray-500 text-center mt-2">Thử thách năng lượng bằng cử chỉ đầu!</p>
+        <h1 className="text-3xl font-black text-gray-800 text-center uppercase tracking-tight">Nghiêng đầu lượm kiến thức</h1>
+        <p className="text-gray-500 text-center mt-2 font-medium">Thử thách trí tuệ bằng cử chỉ đầu!</p>
       </div>
+
+      {!hasInteracted && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-8 p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-2xl flex flex-col items-center gap-3 text-center"
+        >
+          <div className="bg-orange-100 p-3 rounded-full flex items-center justify-center">
+            <VolumeX className="w-6 h-6 text-orange-500 animate-pulse" />
+          </div>
+          <div>
+            <div className="font-bold text-orange-900 text-sm">Âm thanh đang tắt</div>
+            <p className="text-[11px] text-orange-600/80 leading-tight">Nhấp vào nút bên dưới để bật âm nhạc và hiệu ứng trong trò chơi</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleEnableAudio}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-black py-3 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95"
+          >
+            <Volume2 className="w-4 h-4" /> BẬT ÂM THANH NGAY
+          </button>
+        </motion.div>
+      )}
+
+      {hasInteracted && (
+        <div className="mb-8 flex items-center justify-center gap-2 py-2 px-4 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 mx-auto w-fit">
+          <Volume2 className="w-4 h-4" />
+          <span className="text-[10px] font-black uppercase tracking-widest text">Âm thanh đã sẵn sàng</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>

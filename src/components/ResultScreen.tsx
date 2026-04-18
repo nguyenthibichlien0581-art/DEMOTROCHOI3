@@ -8,38 +8,44 @@ interface ResultScreenProps {
   total: number;
   onRestart: () => void;
   onShowLeaderboard: () => void;
+  isAudioEnabled: boolean;
 }
 
-export default function ResultScreen({ score, total, onRestart, onShowLeaderboard }: ResultScreenProps) {
+export default function ResultScreen({ score, total, onRestart, onShowLeaderboard, isAudioEnabled }: ResultScreenProps) {
   useEffect(() => {
+    if (!isAudioEnabled) return;
+
+    // Play celebratory applause and loop it
+    const applauseAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+    applauseAudio.volume = 0.5;
+    applauseAudio.loop = true;
+    applauseAudio.play().catch(e => console.log('Audio play blocked:', e));
+
+    let interval: any;
+
     if (score > 0) {
-      // Play congratulatory sound
-      const winAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-      winAudio.play().catch(e => console.log('Sound play blocked:', e));
-
-      const duration = 3 * 1000;
-      const animationEnd = Date.now() + duration;
+      // Continuous confetti effect for positive scores
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
       const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-      const interval: any = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-      }, 250);
+      interval = setInterval(function() {
+        confetti({ ...defaults, particleCount: 30, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount: 30, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 750);
     }
+
+    // Cleanup: Stop audio and confetti when leaving the screen
+    return () => {
+      applauseAudio.pause();
+      applauseAudio.currentTime = 0;
+      if (interval) clearInterval(interval);
+      confetti.reset();
+    };
   }, [score]);
 
   const percentage = (score / total) * 100;
   let message = "Cố gắng hơn lần sau nhé!";
-  if (percentage >= 80) message = "Tuyệt vời! Em là chuyên gia năng lượng!";
+  if (percentage >= 80) message = "Xuất sắc! Những cú nghiêng đầu của em thật chính xác và thông minh!";
   else if (percentage >= 50) message = "Làm tốt lắm! Tiếp tục phát huy nhé!";
 
   return (

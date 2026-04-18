@@ -14,6 +14,7 @@ type Screen = 'Start' | 'Mode' | 'Game' | 'Result' | 'Leaderboard' | 'Admin';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('Start');
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
     studentName: '',
     studentClass: '',
@@ -77,13 +78,22 @@ export default function App() {
           exit={{ opacity: 0, y: -20 }}
           className="w-full flex justify-center"
         >
-          {screen === 'Start' && <StartScreen onStart={handleStart} onAdmin={() => setScreen('Admin')} />}
+          {screen === 'Start' && (
+            <StartScreen 
+              onStart={handleStart} 
+              onAdmin={() => setScreen('Admin')} 
+              hasInteracted={hasInteracted}
+              onEnableAudio={() => setHasInteracted(true)}
+            />
+          )}
           {screen === 'Game' && (
             <GameScreen 
               questions={questions} 
               studentName={gameState.studentName}
               studentClass={gameState.studentClass}
-              onFinish={handleFinishGame} 
+              onFinish={handleFinishGame}
+              isAudioEnabled={hasInteracted}
+              leaderboard={leaderboard}
             />
           )}
           {screen === 'Result' && (
@@ -92,6 +102,7 @@ export default function App() {
               total={questions.length * 10}
               onRestart={handleRestart}
               onShowLeaderboard={() => setScreen('Leaderboard')}
+              isAudioEnabled={hasInteracted}
             />
           )}
           {screen === 'Leaderboard' && (
@@ -105,8 +116,8 @@ export default function App() {
       </AnimatePresence>
 
       {/* Footer Decoration */}
-      <div className="fixed bottom-4 left-4 text-white/40 text-xs font-bold uppercase tracking-widest pointer-events-none">
-        Energy Quest v1.0 • 6th Grade Science
+      <div className="fixed bottom-4 left-4 text-white/40 text-[10px] font-black uppercase tracking-[0.3em] pointer-events-none">
+        Nghiêng đầu lượm kiến thức v1.0 • Science Quiz
       </div>
     </div>
   );
